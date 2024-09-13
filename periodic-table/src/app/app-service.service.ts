@@ -24,6 +24,18 @@ export class AppServiceService {
   constructor() { }
 
   public getElementData(): PeriodicElement[] {
-    return this.ELEMENT_DATA = [...data];
+    return this.ELEMENT_DATA = data.map(el => ({
+      ...el,
+      editing: false
+    }));
+  }
+
+  public editElement(element: PeriodicElement): PeriodicElement[] {
+    return this.ELEMENT_DATA = this.ELEMENT_DATA.map(e => {
+      if (e.position === element.position) {
+        return { ...element, editing: false }
+      }
+      return e
+    });
   }
 }
