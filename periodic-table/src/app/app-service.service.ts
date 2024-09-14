@@ -19,23 +19,14 @@ const data: PeriodicElement[] = [
 })
 
 export class AppServiceService {
-  private ELEMENT_DATA: PeriodicElement[] = []
+  private ELEMENT_DATA: PeriodicElement[] = data;
 
   constructor() { }
 
   public getElementData(): PeriodicElement[] {
-    return this.ELEMENT_DATA = data.map(el => ({
+    return this.ELEMENT_DATA.map(el => ({
       ...el,
       editing: false
     }));
-  }
-
-  public editElement(element: PeriodicElement): PeriodicElement[] {
-    return this.ELEMENT_DATA = this.ELEMENT_DATA.map(e => {
-      if (e.position === element.position) {
-        return { ...element, editing: false }
-      }
-      return e
-    });
   }
 }

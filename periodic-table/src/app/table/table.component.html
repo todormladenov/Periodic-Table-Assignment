@@ -1,3 +1,13 @@
+<form>
+    <mat-form-field appearance="outline">
+        <mat-label>Filter Criteria</mat-label>
+        <input matInput placeholder="Filter table" #filterInput>
+    </mat-form-field>
+    <button mat-button type="submit" (click)="onFilter(filterInput.value)">
+        <app-seach-icon />
+    </button>
+</form>
+
 <table mat-table [dataSource]="tableDataCopy" class="mat-elevation-z8">
     <!-- Position Column -->
     <ng-container matColumnDef="position">
@@ -13,7 +23,7 @@
             {{element.name}}
             } @else {
             <mat-form-field>
-                <input matInput [(ngModel)]="element.name">
+                <input matInput [(ngModel)]="element.name" required type="text" minlength="3">
             </mat-form-field>
             }
         </td>
@@ -27,7 +37,7 @@
             {{element.weight}}
             } @else {
             <mat-form-field>
-                <input matInput [(ngModel)]="element.weight" />
+                <input matInput [(ngModel)]="element.weight" required min="0.1" type="number"/>
             </mat-form-field>
             }
         </td>
@@ -41,7 +51,7 @@
             {{element.symbol}}
             } @else {
             <mat-form-field>
-                <input matInput [(ngModel)]="element.symbol">
+                <input matInput [(ngModel)]="element.symbol" required type="text" minlength="1">
             </mat-form-field>
             }
         </td>

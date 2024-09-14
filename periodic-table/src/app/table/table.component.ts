@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTable } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,21 +8,22 @@ import { AppServiceService } from '../app-service.service';
 import { PeriodicElement } from '../type';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { SeachIconComponent } from "../seach-icon/seach-icon.component";
 
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatButtonModule, FormsModule, MatFormFieldModule, MatInputModule],
+  imports: [CommonModule, MatTableModule, MatButtonModule, FormsModule, MatFormFieldModule, MatInputModule, SeachIconComponent],
   templateUrl: './table.component.html',
   styleUrl: './table.component.css'
 })
 export class TableComponent implements OnInit {
   public tableData: PeriodicElement[] = [];
   public tableDataCopy: PeriodicElement[] = [];
+  public dataSource!: MatTableDataSource<PeriodicElement>
   public columnsNames: string[] = ['position', 'name', 'weight', 'symbol', 'actions'];
 
   @ViewChild(MatTable) table: MatTable<PeriodicElement> | undefined
-
 
   constructor(private appService: AppServiceService) { }
 
@@ -30,6 +31,7 @@ export class TableComponent implements OnInit {
     setTimeout(() => {
       this.tableData = this.appService.getElementData();
       this.tableDataCopy = this.tableData.map(e => ({ ...e }));
+      this.dataSource = new MatTableDataSource(this.tableDataCopy);
       if (this.table) {
         this.table.renderRows();
       }
@@ -41,17 +43,41 @@ export class TableComponent implements OnInit {
   }
 
   saveRow(element: PeriodicElement): void {
-    const index = this.tableDataCopy.findIndex(el => el.position === element.position);
+    if (element.name.trim() === '' || element.symbol.trim() === '' || !element.weight || element.weight < 0) {
+      return
+    }
 
-    this.tableData = this.appService.editElement(element);
-    this.tableDataCopy[index] = { ...this.tableData[index] };
+    this.tableData = this.tableData.map((e, i) => {
+      if (e.position === element.position) {
+        this.dataSource.data[i] = { ...element, editing: false };
+        return { ...element, editing: false }
+      }
+      return e
+    });
+    element.editing = false;
     this.table?.renderRows();
   }
 
   cancelEdit(element: PeriodicElement): void {
+    const foundElement = this.tableData.find((e, i) => {
+      if (e.position === element.position) {
+        this.dataSource.data[i] = { ...e, editing: false };
+        return e
+      }
+      return undefined
+    });
     const index = this.tableDataCopy.findIndex(e => e.position === element.position);
 
-    this.tableDataCopy[index] = { ...this.tableData[index] };
+    if (foundElement) {
+      this.tableDataCopy[index] = { ...foundElement, editing: false };
+    }
     this.table?.renderRows();
+  }
+
+  onFilter(filterValue: string) {
+    setTimeout(() => {
+      this.dataSource.filter = filterValue.trim().toLocaleLowerCase();
+      this.tableDataCopy = [...this.dataSource.filteredData];
+    }, 2000)
   }
 }
