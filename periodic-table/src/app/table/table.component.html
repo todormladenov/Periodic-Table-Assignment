@@ -7,8 +7,8 @@
         <app-seach-icon />
     </button>
 </form>
-
-<table mat-table [dataSource]="tableDataCopy" class="mat-elevation-z8">
+<app-progress-spinner *ngIf="isLoading" />
+<table mat-table [dataSource]="tableDataCopy" class="mat-elevation-z8" *ngIf="!isLoading">
     <!-- Position Column -->
     <ng-container matColumnDef="position">
         <th mat-header-cell *matHeaderCellDef> No. </th>
@@ -37,7 +37,7 @@
             {{element.weight}}
             } @else {
             <mat-form-field>
-                <input matInput [(ngModel)]="element.weight" required min="0.1" type="number"/>
+                <input matInput [(ngModel)]="element.weight" required min="0.1" type="number" />
             </mat-form-field>
             }
         </td>

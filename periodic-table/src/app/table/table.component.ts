@@ -9,11 +9,12 @@ import { PeriodicElement } from '../type';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SeachIconComponent } from "../seach-icon/seach-icon.component";
+import { ProgressSpinnerComponent } from "../progress-spinner/progress-spinner.component";
 
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatButtonModule, FormsModule, MatFormFieldModule, MatInputModule, SeachIconComponent],
+  imports: [CommonModule, MatTableModule, MatButtonModule, FormsModule, MatFormFieldModule, MatInputModule, SeachIconComponent, ProgressSpinnerComponent],
   templateUrl: './table.component.html',
   styleUrl: './table.component.css'
 })
@@ -22,6 +23,7 @@ export class TableComponent implements OnInit {
   public tableDataCopy: PeriodicElement[] = [];
   public dataSource!: MatTableDataSource<PeriodicElement>
   public columnsNames: string[] = ['position', 'name', 'weight', 'symbol', 'actions'];
+  public isLoading: boolean = true;
 
   @ViewChild(MatTable) table: MatTable<PeriodicElement> | undefined
 
@@ -35,6 +37,7 @@ export class TableComponent implements OnInit {
       if (this.table) {
         this.table.renderRows();
       }
+      this.isLoading = false;
     }, 2000);
   }
 
@@ -75,9 +78,11 @@ export class TableComponent implements OnInit {
   }
 
   onFilter(filterValue: string) {
+    this.isLoading = true;
     setTimeout(() => {
       this.dataSource.filter = filterValue.trim().toLocaleLowerCase();
       this.tableDataCopy = [...this.dataSource.filteredData];
+      this.isLoading = false;
     }, 2000)
   }
 }
