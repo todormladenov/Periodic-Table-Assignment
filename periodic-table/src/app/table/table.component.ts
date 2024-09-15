@@ -34,6 +34,15 @@ export class TableComponent implements OnInit {
       this.tableData = this.appService.getElementData();
       this.tableDataCopy = this.tableData.map(e => ({ ...e }));
       this.dataSource = new MatTableDataSource(this.tableDataCopy);
+
+      this.dataSource.filterPredicate = (data: PeriodicElement, filter: string): boolean => {
+        const lowerCaseFilter = filter.trim().toLocaleLowerCase();
+        
+        return data.name.toLocaleLowerCase().includes(lowerCaseFilter) ||
+          data.symbol.toLocaleLowerCase().includes(lowerCaseFilter) ||
+          data.weight.toString().toLocaleLowerCase().includes(lowerCaseFilter);
+      };
+
       if (this.table) {
         this.table.renderRows();
       }
