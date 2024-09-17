@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { PeriodicElement } from './type';
+import { Observable, of } from 'rxjs';
 
 const data: PeriodicElement[] = [
   { position: 1, name: 'Hydrogen', weight: 1.0079, symbol: 'H' },
@@ -23,10 +24,11 @@ export class AppServiceService {
 
   constructor() { }
 
-  public getElementData(): PeriodicElement[] {
-    return this.ELEMENT_DATA.map(el => ({
+  public getElementData(): Observable<PeriodicElement[]> {
+    const elementData = this.ELEMENT_DATA.map(el => ({
       ...el,
-      editing: false
+      editing: false,
     }));
+    return of(elementData);
   }
 }

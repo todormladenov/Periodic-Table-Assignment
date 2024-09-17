@@ -57,13 +57,14 @@ export class TableComponent implements OnInit {
     this.isLoading$ = this._state.select('isLoading');
     this.tableData$ = this._state.select('tableData');
 
+    this._state.connect('elements', this.appService.getElementData());
+    
     setTimeout(() => {
       this._state.set({
-        elements: this.appService.getElementData(),
-        tableData: this.appService.getElementData(),
+        tableData: this._state.get('elements'),
         isLoading: false
       });
-
+      
     }, 2000);
   }
 
