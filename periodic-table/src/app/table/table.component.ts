@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTable } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,88 +10,110 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SeachIconComponent } from "../seach-icon/seach-icon.component";
 import { ProgressSpinnerComponent } from "../progress-spinner/progress-spinner.component";
+import { RxState } from '@rx-angular/state';
+import { Observable } from 'rxjs';
+
+interface PeriodicTableState {
+  elements: PeriodicElement[],
+  tableData: PeriodicElement[],
+  isLoading: boolean
+}
 
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatButtonModule, FormsModule, MatFormFieldModule, MatInputModule, SeachIconComponent, ProgressSpinnerComponent],
+  imports: [CommonModule,
+    MatTableModule,
+    MatButtonModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    SeachIconComponent,
+    ProgressSpinnerComponent
+  ],
+
   templateUrl: './table.component.html',
-  styleUrl: './table.component.css'
+  styleUrl: './table.component.css',
+  providers: [RxState]
 })
+
 export class TableComponent implements OnInit {
-  public tableData: PeriodicElement[] = [];
-  public tableDataCopy: PeriodicElement[] = [];
-  public dataSource!: MatTableDataSource<PeriodicElement>
+  public tableData$!: Observable<PeriodicElement[]>;
+  public isLoading$!: Observable<boolean>;
+  public editedRows: { [key: number]: PeriodicElement } = {};
   public columnsNames: string[] = ['position', 'name', 'weight', 'symbol', 'actions'];
-  public isLoading: boolean = true;
 
   @ViewChild(MatTable) table: MatTable<PeriodicElement> | undefined
 
-  constructor(private appService: AppServiceService) { }
+  constructor(private appService: AppServiceService, private _state: RxState<PeriodicTableState>) {
+    this._state.set({
+      elements: [],
+      tableData: [],
+      isLoading: true
+    });
+  }
 
   ngOnInit(): void {
+    this.isLoading$ = this._state.select('isLoading');
+    this.tableData$ = this._state.select('tableData');
+
     setTimeout(() => {
-      this.tableData = this.appService.getElementData();
-      this.tableDataCopy = this.tableData.map(e => ({ ...e }));
-      this.dataSource = new MatTableDataSource(this.tableDataCopy);
+      this._state.set({
+        elements: this.appService.getElementData(),
+        tableData: this.appService.getElementData(),
+        isLoading: false
+      });
 
-      this.dataSource.filterPredicate = (data: PeriodicElement, filter: string): boolean => {
-        const lowerCaseFilter = filter.trim().toLocaleLowerCase();
-        
-        return data.name.toLocaleLowerCase().includes(lowerCaseFilter) ||
-          data.symbol.toLocaleLowerCase().includes(lowerCaseFilter) ||
-          data.weight.toString().toLocaleLowerCase().includes(lowerCaseFilter);
-      };
-
-      if (this.table) {
-        this.table.renderRows();
-      }
-      this.isLoading = false;
     }, 2000);
   }
 
   editRow(element: PeriodicElement): void {
-    element.editing = true;
+    this.editedRows[element.position] = { ...element }
+    this._state.set({
+      elements: this._state.get('elements').map(e => e.position === element.position ? { ...e, editing: true } : e),
+      tableData: this._state.get('tableData').map(e => e.position === element.position ? { ...e, editing: true } : e),
+    });
   }
 
   saveRow(element: PeriodicElement): void {
-    if (element.name.trim() === '' || element.symbol.trim() === '' || !element.weight || element.weight < 0) {
-      return
+    const editedElement = this.editedRows[element.position];
+
+    if (editedElement.name.trim() === '' || editedElement.symbol.trim() === '' || !editedElement.weight || editedElement.weight < 0) {
+      return;
     }
 
-    this.tableData = this.tableData.map((e, i) => {
-      if (e.position === element.position) {
-        this.dataSource.data[i] = { ...element, editing: false };
-        return { ...element, editing: false }
-      }
-      return e
+    this._state.set({
+      elements: this._state.get('elements').map(e => e.position === editedElement.position ? { ...editedElement, editing: false } : e),
+      tableData: this._state.get('tableData').map(e => e.position === editedElement.position ? { ...editedElement, editing: false } : e),
     });
-    element.editing = false;
+    
     this.table?.renderRows();
   }
 
   cancelEdit(element: PeriodicElement): void {
-    const foundElement = this.tableData.find((e, i) => {
-      if (e.position === element.position) {
-        this.dataSource.data[i] = { ...e, editing: false };
-        return e
-      }
-      return undefined
+    this._state.set({
+      elements: this._state.get('elements').map(e => e.position === element.position ? { ...e, editing: false } : e),
+      tableData: this._state.get('tableData').map(e => e.position === element.position ? { ...e, editing: false } : e)
     });
-    const index = this.tableDataCopy.findIndex(e => e.position === element.position);
-
-    if (foundElement) {
-      this.tableDataCopy[index] = { ...foundElement, editing: false };
-    }
     this.table?.renderRows();
   }
 
   onFilter(filterValue: string) {
-    this.isLoading = true;
+    this._state.set({ isLoading: true });
+
     setTimeout(() => {
-      this.dataSource.filter = filterValue.trim().toLocaleLowerCase();
-      this.tableDataCopy = [...this.dataSource.filteredData];
-      this.isLoading = false;
-    }, 2000)
+      const filter = filterValue.trim().toLowerCase();
+      const filteredElements = this._state.get('elements').filter(data =>
+        data.name.toLowerCase().includes(filter) ||
+        data.symbol.toLowerCase().includes(filter) ||
+        data.weight.toString().includes(filter)
+      );
+
+      this._state.set({
+        tableData: [...filteredElements],
+        isLoading: false
+      });
+
+    }, 2000);
   }
 }
